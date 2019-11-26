@@ -1,0 +1,22 @@
+How to use pig and hive on gcp and query data
+
+Step1- Download Data from stack exchange in form of csv files.
+Step2- create instance on GCP using Dataproc.
+Step3- Using ssh uploaded the data to cluster transferred to hdfs.
+hadoop fs -put 1.csv /   hadoop fs -put 2.csv /     hadoop fs -put 3.csv /           hadoop fs -put 4.csv /
+Step4- merged and upload them with pig.
+REGISTER /usr/lib/pig/piggybank.jar
+DEFINE CSVLoader org.apache.pig.piggybank.storage.CSVLoader();
+d1  = LOAD '/1.csv' using org.apache.pig.piggybank.storage.CSVExcelStorage(',', 'YES_MULTILINE', 'NOCHANGE','SKIP_INPUT_HEADER') as (Id:int, PostTypeId:chararray, AcceptedAnswerId:chararray,	ParentId:chararray,	CreationDate:chararray,	DeletionDate:chararray,	Score:int, ViewCount:int,	Body:chararray,	OwnerUserId:chararray,	OwnerDisplayName:chararray,	LastEditorUserId:chararray, LastEditorDisplayName:chararray, LastEditDate:chararray, LastActivityDate:chararray, Title:chararray,	Tags:chararray, AnswerCount:chararray, CommentCount:chararray,	FavoriteCount:chararray, ClosedDate:chararray, CommunityOwnedDate:chararray);
+d2  = LOAD '/2.csv' using org.apache.pig.piggybank.storage.CSVExcelStorage(',', 'YES_MULTILINE', 'NOCHANGE','SKIP_INPUT_HEADER') as (Id:int, PostTypeId:chararray, AcceptedAnswerId:chararray,	ParentId:chararray,	CreationDate:chararray,	DeletionDate:chararray,	Score:int, ViewCount:int,	Body:chararray,	OwnerUserId:chararray,	OwnerDisplayName:chararray,	LastEditorUserId:chararray, LastEditorDisplayName:chararray, LastEditDate:chararray, LastActivityDate:chararray, Title:chararray,	Tags:chararray, AnswerCount:chararray, CommentCount:chararray,	FavoriteCount:chararray, ClosedDate:chararray, CommunityOwnedDate:chararray);
+d3  = LOAD '/3.csv' using org.apache.pig.piggybank.storage.CSVExcelStorage(',', 'YES_MULTILINE', 'NOCHANGE','SKIP_INPUT_HEADER') as (Id:int, PostTypeId:chararray, AcceptedAnswerId:chararray,	ParentId:chararray,	CreationDate:chararray,	DeletionDate:chararray,	Score:int, ViewCount:int,	Body:chararray,	OwnerUserId:chararray,	OwnerDisplayName:chararray,	LastEditorUserId:chararray, LastEditorDisplayName:chararray, LastEditDate:chararray, LastActivityDate:chararray, Title:chararray,	Tags:chararray, AnswerCount:chararray, CommentCount:chararray,	FavoriteCount:chararray, ClosedDate:chararray, CommunityOwnedDate:chararray);
+d4  = LOAD '/4.csv' using org.apache.pig.piggybank.storage.CSVExcelStorage(',', 'YES_MULTILINE', 'NOCHANGE','SKIP_INPUT_HEADER') as (Id:int, PostTypeId:chararray, AcceptedAnswerId:chararray,	ParentId:chararray,	CreationDate:chararray,	DeletionDate:chararray,	Score:int, ViewCount:int,	Body:chararray,	OwnerUserId:chararray,	OwnerDisplayName:chararray,	LastEditorUserId:chararray, LastEditorDisplayName:chararray, LastEditDate:chararray, LastActivityDate:chararray, Title:chararray,	Tags:chararray, AnswerCount:chararray, CommentCount:chararray,	FavoriteCount:chararray, ClosedDate:chararray, CommunityOwnedDate:chararray);
+Merge = UNION d1, d2, d3, d4;
+i= FOREACH Merge generate Id,PostTypeId,Score,ViewCount,REPLACE(REPLACE(Body, '\n',''),',','') As Body, OwnerUserId,OwnerDisplayName;
+Store i into '/Output/' using PigStorage(':');
+Step5- Query with Hive.
+create external table abc (Id int,PostTypeId int,Score int,ViewCount int,Body string,OwnerUserId int,OwnerDisplayName string) row format delimited fields terminated by ',';
+LOAD DATA INPATH '/Output' OVERWRITE INTO TABLE abc;
+Select Score from abc order by Score desc limit 10;
+select OwnerUserId, sum(score) as Total_Score from abc where owneruserid is not null group by owneruserid order by Total_Score desc limit 10;
+select count(distinct owneruserid) from test where body like '%hadoop%';
